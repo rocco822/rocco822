@@ -1,0 +1,44 @@
+name: Update on-repeat record
+
+on:
+  schedule:
+    - cron: "37 */6 * * *"  # every 6 hours
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [music.txt, scripts/music.py, .github/workflows/music.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: music
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Draw record
+        env:
+          # Settings → Secrets and variables → Actions.
+          # Leave them unset to use music.txt instead.
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_USER: ${{ vars.LASTFM_USER }}
+        run: python3 scripts/music.py
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets
+          git diff --cached --quiet && exit 0
+          git commit -m "Update on-repeat record"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push && exit 0
+            sleep $((attempt * 20))
+          done
+          exit 1
