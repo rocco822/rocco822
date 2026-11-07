@@ -12,8 +12,8 @@ Lately I've been working on [Z-Ant](https://github.com/ZantFoundation/Z-Ant), wh
 <br>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/films-dark.svg?v=befaffdd">
-  <img alt="The last films I watched, from Letterboxd" src="assets/films-light.svg?v=3455bc5b" width="520">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/films-dark.svg?v=e9652e1e">
+  <img alt="The last films I watched, from Letterboxd" src="assets/films-light.svg?v=7b720dc7" width="520">
 </picture>
 
 <br><br>
