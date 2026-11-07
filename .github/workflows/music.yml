@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [music.txt, scripts/**, .github/workflows/music.yml]
+    paths: [README.md, music.txt, scripts/**, .github/workflows/music.yml]
 
 permissions:
   contents: write
