@@ -1,4 +1,4 @@
-name: Update on-repeat record
+name: Update music and films cards
 
 on:
   schedule:
@@ -6,13 +6,13 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [music.txt, scripts/music.py, .github/workflows/music.yml]
+    paths: [music.txt, scripts/**, .github/workflows/music.yml]
 
 permissions:
   contents: write
 
 concurrency:
-  group: music
+  group: profile-cards
   cancel-in-progress: false
 
 jobs:
@@ -24,11 +24,16 @@ jobs:
 
       - name: Draw record
         env:
-          # Settings → Secrets and variables → Actions.
-          # Leave them unset to use music.txt instead.
+          # Settings → Secrets and variables → Actions → Secrets.
+          # Without the key it falls back to music.txt.
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
-          LASTFM_USER: ${{ vars.LASTFM_USER }}
+          LASTFM_USER: rocpan
         run: python3 scripts/music.py
+
+      - name: Draw films
+        env:
+          LETTERBOXD_USER: roccopanizzi
+        run: python3 scripts/films.py
 
       - name: Commit if changed
         run: |
@@ -36,7 +41,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add assets
           git diff --cached --quiet && exit 0
-          git commit -m "Update on-repeat record"
+          git commit -m "Update music and films cards"
           for attempt in 1 2 3; do
             git pull --rebase origin main && git push && exit 0
             sleep $((attempt * 20))
