@@ -5,8 +5,8 @@ Lately I've been working on [Z-Ant](https://github.com/ZantFoundation/Z-Ant), wh
 <br>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/music-dark.svg?v=4d1e6700">
-  <img alt="The album I've had on repeat this week" src="assets/music-light.svg?v=0d0e5a97" width="520">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/music-dark.svg?v=64444101">
+  <img alt="The album I've had on repeat this week" src="assets/music-light.svg?v=d28f6218" width="520">
 </picture>
 
 <br>
