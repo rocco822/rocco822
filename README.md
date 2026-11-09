@@ -1,7 +1,5 @@
 <samp>rocco panizzi · MSc in computer science & engineering @ polimi</samp>
 
-Lately I've been working on [Z-Ant](https://github.com/ZantFoundation/Z-Ant), which runs neural networks on microcontrollers. Before that, [Mesos](https://github.com/rocco822/mesos-board-game): an online multiplayer board game, my Software Engineering final project.
-
 <br>
 
 <picture>
