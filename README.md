@@ -3,8 +3,8 @@
 <br>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/music-dark.svg?v=a359db79">
-  <img alt="The album I've had on repeat this week" src="assets/music-light.svg?v=42fe9972" width="520">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/music-dark.svg?v=3286396b">
+  <img alt="The album I've had on repeat this week" src="assets/music-light.svg?v=298c3c17" width="520">
 </picture>
 
 <br>
