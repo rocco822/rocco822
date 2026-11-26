@@ -3,7 +3,7 @@
 Where the album comes from:
   - LASTFM_API_KEY and LASTFM_USER set -> your most played album of the last 7 days
   - otherwise -> music.txt, one line: "Artist" or "Artist — Album"
-The cover comes from the iTunes Search API (no key) and is embedded in the SVG,
+The cover comes from the iTunes Search API, or Deezer as a fallback (no keys) and is embedded in the SVG,
 because GitHub does not load external images inside an SVG.
 
 Run: python3 scripts/music.py
@@ -60,21 +60,44 @@ def from_file():
     return line.strip(), None
 
 
-def cover(artist, album):
-    """Return (album title, artist, base64 jpeg) from the iTunes Search API."""
-    results = []
+def norm(text):
+    return "".join(ch for ch in text.lower() if ch.isalnum())
+
+
+def matches(want_artist, want_album, artist, album):
+    if norm(want_artist) not in norm(artist) and norm(artist) not in norm(want_artist):
+        return False
+    return not want_album or norm(want_album) in norm(album)
+
+
+def itunes(artist, album):
     for term in dict.fromkeys(filter(None, [f"{artist} {album or ''}".strip(), album, artist])):
-        q = urllib.parse.urlencode({"term": term, "entity": "album", "limit": 10, "country": "it"})
-        results = json.loads(get(f"https://itunes.apple.com/search?{q}"))["results"]
-        if results:
-            break
-    if not results:
-        raise LookupError(f"no cover found for {artist!r} / {album!r}")
-    want = (album or "").lower()
-    best = next((r for r in results if want and want in r["collectionName"].lower()), results[0])
-    url = best["artworkUrl100"].replace("100x100bb", "400x400bb")
-    title = album or best["collectionName"]
-    return title, best["artistName"], base64.b64encode(get(url)).decode()
+        q = urllib.parse.urlencode({"term": term, "entity": "album", "limit": 25, "country": "it"})
+        for r in json.loads(get(f"https://itunes.apple.com/search?{q}"))["results"]:
+            if matches(artist, album, r["artistName"], r["collectionName"]):
+                return r["collectionName"], r["artistName"], r["artworkUrl100"].replace("100x100bb", "400x400bb")
+
+
+def deezer(artist, album):
+    q = urllib.parse.urlencode({"q": f"{artist} {album or ''}".strip()})
+    for r in json.loads(get(f"https://api.deezer.com/search/album?{q}")).get("data", []):
+        if matches(artist, album, r["artist"]["name"], r["title"]):
+            return r["title"], r["artist"]["name"], r["cover_big"]
+
+
+def cover(artist, album):
+    """Return (album title, artist, base64 jpeg). Only accepts a result whose artist
+    and album actually match, so a bad search never puts the wrong cover on the card."""
+    for source in (itunes, deezer):
+        try:
+            hit = source(artist, album)
+        except Exception as e:
+            print(f"warning: {source.__name__} failed ({e})", file=sys.stderr)
+            continue
+        if hit:
+            name, artist_name, url = hit
+            return album or name, artist_name, base64.b64encode(get(url)).decode()
+    raise LookupError(f"no cover found for {artist!r} / {album!r}")
 
 
 def fit(text, n):
