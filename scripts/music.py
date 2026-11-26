@@ -13,6 +13,7 @@ import base64
 import json
 import os
 import sys
+import time
 import urllib.parse
 import urllib.request
 from html import escape
@@ -29,10 +30,16 @@ THEMES = {
 SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif"
 
 
-def get(url):
+def get(url, tries=3):
     req = urllib.request.Request(url, headers={"User-Agent": "rocco822-profile"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return r.read()
+    for attempt in range(1, tries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return r.read()
+        except Exception:
+            if attempt == tries:
+                raise
+            time.sleep(attempt * 5)
 
 
 def from_lastfm(key, user):
@@ -55,11 +62,14 @@ def from_file():
 
 def cover(artist, album):
     """Return (album title, artist, base64 jpeg) from the iTunes Search API."""
-    term = f"{artist} {album or ''}".strip()
-    q = urllib.parse.urlencode({"term": term, "entity": "album", "limit": 10, "country": "it"})
-    results = json.loads(get(f"https://itunes.apple.com/search?{q}"))["results"]
+    results = []
+    for term in dict.fromkeys(filter(None, [f"{artist} {album or ''}".strip(), album, artist])):
+        q = urllib.parse.urlencode({"term": term, "entity": "album", "limit": 10, "country": "it"})
+        results = json.loads(get(f"https://itunes.apple.com/search?{q}"))["results"]
+        if results:
+            break
     if not results:
-        sys.exit(f"no cover found for {term!r}")
+        raise LookupError(f"no cover found for {artist!r} / {album!r}")
     want = (album or "").lower()
     best = next((r for r in results if want and want in r["collectionName"].lower()), results[0])
     url = best["artworkUrl100"].replace("100x100bb", "400x400bb")
@@ -115,9 +125,21 @@ def record(theme, title, artist, img):
 
 if __name__ == "__main__":
     key, user = os.environ.get("LASTFM_API_KEY"), os.environ.get("LASTFM_USER")
-    picked = from_lastfm(key, user) if key and user else None
+    picked = None
+    if key and user:
+        try:
+            picked = from_lastfm(key, user)
+        except Exception as e:
+            # A Last.fm hiccup shouldn't swap the card for music.txt or fail the workflow.
+            print(f"warning: last.fm failed ({e}), keeping the current card", file=sys.stderr)
+            sys.exit(0)
     artist, album = picked or from_file()
-    title, artist_name, img = cover(artist, album)
+    try:
+        title, artist_name, img = cover(artist, album)
+    except Exception as e:
+        # Keep the previous card rather than failing the whole workflow.
+        print(f"warning: cover lookup failed ({e}), keeping the current card", file=sys.stderr)
+        sys.exit(0)
     OUT.mkdir(exist_ok=True)
     for t in THEMES:
         (OUT / f"music-{t}.svg").write_text(record(t, title, artist, img), encoding="utf-8")
